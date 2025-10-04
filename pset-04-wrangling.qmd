@@ -72,15 +72,26 @@ population <- resp_body_json(response, simplifyVector = TRUE)
 #| warning: false
 library(tidyverse)
 library(janitor)
-#population <- population |> ## Use janitor row to names function
+population <- population |> ## Use janitor row to names function
   # convert to tibble
-  # remove stat column
+  as_tibble() |>
+  # make the first row the header
+  row_to_names(row_number=1) |>
+  # remove state ID column
+  select(-state) |>
   # rename state column to state_name
-  # use pivot_longer to tidy
   # remove POP_ from year
-  # parese all relevant colunns to numeric
+  rename("state_name"="NAME", "2020"="POP_2020","2021"="POP_2021") |>
+  # parse all relevant columns to numeric
+  mutate(`2020`=as.numeric(`2020`), `2021`=as.numeric(`2021`)) |>
   # add state abbreviations using state.abb variable
+  mutate(state=state.abb[match(state_name, state.name)]) |>
   # use case_when to add abbreviations for DC and PR
+  mutate(state=case_when(state_name=="District of Columbia" ~ "DC",
+                         state_name=="Puerto Rico" ~ "PR", 
+                         .default = state))
+# use pivot_longer to tidy??
+  
 ```
 
 7. As a check, make a barplot of states' 2021 and 2022 populations. Show the state names in the y-axis ordered by population size.  Hint: You will need to use `reorder` and use `facet_wrap`.
