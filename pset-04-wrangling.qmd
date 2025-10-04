@@ -158,7 +158,7 @@ population <- left_join(population, regions, by="state_name")
 
 ```{r}
 api <- "https://data.cdc.gov/resource/pwn4-m3yp.json"
-# cases_raw <- 
+cases_raw <- request(api) |> req_perform() |> resp_body_json(simplifyVector=TRUE)
 ```
 
 We see exactly 1,000 rows. We should be seeing over $52 \times 3$ rows per state.
