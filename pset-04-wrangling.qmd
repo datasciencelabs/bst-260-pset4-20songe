@@ -130,6 +130,18 @@ library(purrr)
 url <- "https://github.com/datasciencelabs/2025/raw/refs/heads/main/data/regions.json"
 # regions <- use jsonlit JSON parser 
 # regions <- convert list to data frame. You can use map_df in purrr package 
+regions <- fromJSON(url) |>
+  pmap_df(function(region, region_name, states) {
+    tibble(region=region,
+           region_name=region_name,
+           states=states)
+  } ) |>
+  # shorten long region name
+  mutate(region_name=
+    case_when(
+    region_name=="New York and New Jersey, Puerto Rico, Virgin Islands" ~ 
+      "NY, NJ, Territories", 
+    .default=region_name))
 ```
 
 9. Add a region and region name columns to the `population` data frame.
