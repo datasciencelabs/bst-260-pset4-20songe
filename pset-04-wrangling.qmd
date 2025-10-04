@@ -134,20 +134,22 @@ regions <- fromJSON(url) |>
   pmap_df(function(region, region_name, states) {
     tibble(region=region,
            region_name=region_name,
-           states=states)
+           state_name=states)
   } ) |>
   # shorten long region name
   mutate(region_name=
     case_when(
     region_name=="New York and New Jersey, Puerto Rico, Virgin Islands" ~ 
       "NY, NJ, Territories", 
-    .default=region_name))
+    .default=region_name)) |>
+  filter(state_name %in% c(state.name, "District of Columbia", "Puerto Rico"))
 ```
 
 9. Add a region and region name columns to the `population` data frame.
 
 ```{r}
-# population <- 
+# combine with population dataframe
+population <- left_join(population, regions, by="state_name")
 ```
 
 
