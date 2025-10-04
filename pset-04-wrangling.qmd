@@ -54,7 +54,7 @@ response
 4. Use a function from the **httr2** package to determine the content type of your response.
 
 ```{r}
-# Your code here
+resp_content_type(response)
 ```
 
 5. Use just one line of code and one function to extract the data into a matrix. 
