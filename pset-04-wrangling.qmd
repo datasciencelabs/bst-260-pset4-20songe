@@ -40,14 +40,15 @@ Hint: Print out `request` to check that the URL matches what we want.
 #| message: false
 #| warning: false
 library(httr2)
-#request <- 
+request <- request(url)
 ```
 
 3. Make a request to the US Census API using the `request` object. Save the response to and object named `response`. Check the response status of your request and make sure it was successful. You can learn about _status codes_ [here](https://en.wikipedia.org/wiki/List_of_HTTP_status_codes).
 
 
 ```{r}
-#response <- 
+response <- req_perform(request)
+response
 ```
 
 4. Use a function from the **httr2** package to determine the content type of your response.
