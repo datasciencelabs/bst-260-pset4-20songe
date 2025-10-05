@@ -256,5 +256,18 @@ deaths <- request(deaths_url) |>
 15. Using the `deaths` dataset you created, make a bar plot showing the total COVID-19 deaths by state. Show only the top 10 states with the highest death counts. Order the bars from highest to lowest and use appropriate labels and title.
 
 ```{r}
-deaths
+deaths |>
+  # calculate total deaths per state
+  group_by(state) |>
+  summarize(total_deaths=sum(deaths)) |>
+  arrange(desc(total_deaths)) |>
+  head(10) |>
+  # order states by deaths
+  ggplot(aes(x=reorder(state, desc(total_deaths)), y=total_deaths)) +
+  geom_col() +
+  # label graph
+  labs(title="COVID-19 Deaths by State",
+       caption="States with top 10 highest total COVID-19 deaths.") +
+  xlab("State") +
+  ylab("Total COVID-19 Deaths")
 ```
