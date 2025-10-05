@@ -82,8 +82,6 @@ population <- population |> ## Use janitor row to names function
   # rename state column to state_name
   # remove POP_ from year
   rename("state_name"="NAME", "2020"="POP_2020","2021"="POP_2021") |>
-  # parse all relevant columns to numeric
-  mutate(`2020`=as.numeric(`2020`), `2021`=as.numeric(`2021`)) |>
   # add state abbreviations using state.abb variable
   mutate(state=state.abb[match(state_name, state.name)]) |>
   # use case_when to add abbreviations for DC and PR
@@ -91,8 +89,11 @@ population <- population |> ## Use janitor row to names function
                          state_name=="Puerto Rico" ~ "PR", 
                          .default = state)) |>
   # use pivot_longer to tidy
-  pivot_longer(cols=c("2020","2021"), names_to="year", values_to="population")
-  
+  pivot_longer(cols=c("2020","2021"), 
+               names_to="year", 
+               values_to="population") |>
+  # parse all relevant columns to numeric
+  mutate(year=as.numeric(year), population=as.numeric(population)) 
 ```
 
 7. As a check, make a barplot of states' 2021 and 2022 populations. Show the state names in the y-axis ordered by population size.  Hint: You will need to use `reorder` and use `facet_wrap`.
@@ -101,9 +102,11 @@ population <- population |> ## Use janitor row to names function
 population |> 
   # reorder state
   # assign aesthetic mapping
-  ggplot(aes(x=population, y=reorder(state_name, population))) +
+  ggplot(aes(x=reorder(state_name, population), y=population)) +
   # use geom_col to plot barplot
   geom_col() +
+  # flip coordinates
+  coord_flip() +
   # facet by year
   facet_wrap(~year) +
   # relabel plot
@@ -186,7 +189,11 @@ cases_raw <- request(api) |>
 12. For 2020 and 2021, make a time series plot of cases per 100,000 versus time for each state. Stratify the plot by region name. Make sure to label you graph appropriately. 
 
 ```{r}
-#cases |> 
+cases_raw |> 
+  filter(year(date) == "2020" | year(date) == "2021") |>
+  mutate(year = year(date)) |>
+  left_join(select(population, population, state, as.numeric(year)), by=join_by(state == state, year == year))
+  # ggplot(aes(date, cases))
 ```
 
 13. The dates in the `cases` dataset are stored as character strings. Use the **lubridate** package to properly parse the `date` column, then create a summary table showing the total COVID-19 cases by month and year for 2020 and 2021. The table should have columns for year, month (as month name), and total cases across all states. Order by year and month. Use the **knitr** package and `kable()` function to display the results as a formatted table.
