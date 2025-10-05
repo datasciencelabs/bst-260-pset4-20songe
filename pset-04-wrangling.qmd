@@ -17,6 +17,7 @@ census_key <- "A_CENSUS_KEY_THAT_WORKS"
 Write a first line of code for your problem set that defines `census_key` by running the code in the file `census-key.R`.
 
 ```{r}
+#| label: load-api-q1
 source("census-key.R")
 ```
 
@@ -25,6 +26,7 @@ provides details on how to leverage this valuable resource. We are interested in
 
 
 ```{r}
+#| label: set-url-q2
 url <- "https://api.census.gov/data/2021/pep/population"
 ```
 
@@ -38,6 +40,7 @@ Create an object called `request` of class `httr2_request` with this URL as an e
 Hint: Print out `request` to check that the URL matches what we want.
 
 ```{r}
+#| label: create-request-q2
 #| message: false
 #| warning: false
 library(httr2)
@@ -49,7 +52,9 @@ request <- request(request_url)
 
 
 ```{r}
+#| label: make-request-q3
 response <- req_perform(request)
+# check response status
 print(paste("Response status is 200?", response$status_code == 200))
 print(response)
 ```
@@ -57,6 +62,7 @@ print(response)
 4. Use a function from the **httr2** package to determine the content type of your response.
 
 ```{r}
+#| label: content-type-q4
 resp_content_type(response)
 ```
 
@@ -64,12 +70,14 @@ resp_content_type(response)
 Hints: 1) Use the `resp_body_json` function. 2) The first row of the matrix will be the variable names and this OK as we will fix in the next exercise.
 
 ```{r}
+#| label: population-matrix-q5
 population <- resp_body_json(response, simplifyVector = TRUE)
 ```
 
 6. Examine the `population` matrix you just created. Notice that 1) it is not tidy, 2) the column types are not what we want, and 3) the first row is a header. Convert `population` to a tidy dataset. Remove the state ID column and change the name of the column with state names to `state_name`. Add a column with state abbreviations called `state`. Make sure you assign the abbreviations for DC and PR correctly. Hint: Use the **janitor** package to make the first row the header. 
 
 ```{r}
+#| label: tidy-population-q6
 #| message: false
 #| warning: false
 library(tidyverse)
@@ -98,9 +106,10 @@ population <- population |> ## Use janitor row to names function
   mutate(year=as.numeric(year), population=as.numeric(population)) 
 ```
 
-7. As a check, make a barplot of states' 2021 and 2022 populations. Show the state names in the y-axis ordered by population size.  Hint: You will need to use `reorder` and use `facet_wrap`.
+7. As a check, make a barplot of states' 2020 and 2021 populations. Show the state names in the y-axis ordered by population size.  Hint: You will need to use `reorder` and use `facet_wrap`.
 
 ```{r, fig.height=10, fig.width=8}
+#| label: barplot-q7
 population |> 
   # reorder state
   # assign aesthetic mapping
@@ -123,20 +132,22 @@ population |>
 8. The following URL:
 
 ```{r}
+#| label: url-q8
 url <- "https://github.com/datasciencelabs/2025/raw/refs/heads/main/data/regions.json"
 ```
 
 points to a JSON file that lists the states in the 10 Public Health Service (PHS) defined by CDC. We want to add these regions to the `population` dataset. To facilitate this create a data frame called `regions` that has two columns `state_name`, `region`, `region_name`. One of the regions has a long name. Change it to something shorter.
 
 ```{r}
+#| label: regions-q8
 #| message: false
 #| warning: false
 library(jsonlite)
 library(purrr)
 url <- "https://github.com/datasciencelabs/2025/raw/refs/heads/main/data/regions.json"
 # regions <- use jsonlit JSON parser 
-# regions <- convert list to data frame. You can use map_df in purrr package 
 regions <- fromJSON(url) |>
+  # regions <- convert list to data frame. You can use map_df in purrr package 
   pmap_df(function(region, region_name, states) {
     tibble(region=region,
            region_name=region_name,
@@ -154,6 +165,7 @@ regions <- fromJSON(url) |>
 9. Add a region and region name columns to the `population` data frame.
 
 ```{r}
+#| label: join-population-regions-q9
 # combine with population dataframe
 population <- left_join(population, regions, by="state_name")
 ```
@@ -161,17 +173,20 @@ population <- left_join(population, regions, by="state_name")
 
 10. From reading <https://data.cdc.gov/> we learn the endpoint `https://data.cdc.gov/resource/pwn4-m3yp.json` provides state level data from SARS-COV2 cases. Use the **httr2** tools you have learned to download this into a data frame. Is all the data there? If not, comment on why.
 
+**Comments:** All the data is not available in `cases_raw` yet because the CDC automatically limits the results to 1000 observations. We need to use the `$limit` parameter to expand the number of results.
 
 ```{r}
+#| label: request-q10
 api <- "https://data.cdc.gov/resource/pwn4-m3yp.json"
 response <- request(api) |>
   req_perform()
+
+# check response code
 if (response$status_code == 200) {
   cases_raw <- response |> resp_body_json(simplifyVector=TRUE)
 } else {
   stop(paste("Unsuccessful status code in response:", response))
 }
-
 ```
 
 We see exactly 1,000 rows. We should be seeing over $52 \times 3$ rows per state.
@@ -179,6 +194,7 @@ We see exactly 1,000 rows. We should be seeing over $52 \times 3$ rows per state
 11. The reason you see exactly 1,000 rows is because CDC has a default limit. You can change this limit by adding `$limit=10000000000` to the request. Rewrite the previous request to ensure that you receive all the data. Then wrangle the resulting data frame to produce a data frame with columns `state`, `date` (should be the end date) and `cases`. Make sure the cases are numeric and the dates are in `Date` ISO-8601 format.
 
 ```{r}
+#| label: clean-data-q11
 api <- "https://data.cdc.gov/resource/pwn4-m3yp.json"
 cases_raw <- request(api) |> 
   # add limit to request
@@ -197,6 +213,7 @@ cases_raw <- request(api) |>
 12. For 2020 and 2021, make a time series plot of cases per 100,000 versus time for each state. Stratify the plot by region name. Make sure to label you graph appropriately. 
 
 ```{r, fig.height=10, fig.width=8}
+#| label: time-series-q12
 cases_raw |> 
   # filter for 2020 and 2021
   filter(year(date) == "2020" | year(date) == "2021") |>
@@ -224,6 +241,7 @@ cases_raw |>
 13. The dates in the `cases` dataset are stored as character strings. Use the **lubridate** package to properly parse the `date` column, then create a summary table showing the total COVID-19 cases by month and year for 2020 and 2021. The table should have columns for year, month (as month name), and total cases across all states. Order by year and month. Use the **knitr** package and `kable()` function to display the results as a formatted table.
 
 ```{r}
+#| label: summary-cases-q13
 library(knitr)
 cases_raw |> 
   # use lubridate to parse date column
@@ -242,6 +260,7 @@ cases_raw |>
 14. The following URL provides additional COVID-19 data from the CDC in JSON format:
 
 ```{r}
+#| label: url-q14
 deaths_url <- "https://data.cdc.gov/resource/9bhg-hcku.json"
 ```
 
@@ -249,18 +268,25 @@ Use **httr2** to download COVID-19 death data from this endpoint. Make sure to r
 
 
 ```{r}
+#| label: clean-data-q14
 response <- request(deaths_url) |>
   req_url_query(`$limit`=10000000000) |>
   req_perform()
 
+# check response status code
 if (response$status_code == 200) {
+  # create deaths
   deaths <- response |>
     resp_body_json(simplifyVector = TRUE) |>
+    # select state, date, deaths columns
     select(state,
            date=end_date,
            deaths=covid_19_deaths) |>
+    # convert to date and numeric types
     mutate(date=as.Date(date), deaths=as.numeric(deaths)) |>
+    # filter for states in previous data
     filter(state %in% c(state.name, "District of Columbia", "Puerto Rico")) |>
+    # remove rows containing NA values
     drop_na()
 } else {
   print(paste("Request failed with response: ", response))
@@ -271,6 +297,7 @@ if (response$status_code == 200) {
 15. Using the `deaths` dataset you created, make a bar plot showing the total COVID-19 deaths by state. Show only the top 10 states with the highest death counts. Order the bars from highest to lowest and use appropriate labels and title.
 
 ```{r}
+#| label: bar-plot-q15
 deaths |>
   # calculate total deaths per state
   group_by(state) |>
