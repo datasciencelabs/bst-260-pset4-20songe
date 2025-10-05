@@ -44,7 +44,9 @@ Hint: Print out `request` to check that the URL matches what we want.
 #| message: false
 #| warning: false
 library(httr2)
-request_url <- paste0(url, "?get=POP_2020,POP_2021,NAME&for=state:*&key=",census_key)
+request_url <- paste0(url, 
+                      "?get=POP_2020,POP_2021,NAME&for=state:*&key=",
+                      census_key)
 request <- request(request_url)
 ```
 
@@ -196,17 +198,25 @@ We see exactly 1,000 rows. We should be seeing over $52 \times 3$ rows per state
 ```{r}
 #| label: clean-data-q11
 api <- "https://data.cdc.gov/resource/pwn4-m3yp.json"
-cases_raw <- request(api) |> 
+response <- request(api) |> 
   # add limit to request
   req_url_query(`$limit`=10000000000) |>
   # perform request
-  req_perform() |>
+  req_perform()
+
+# check that response has 200 status code
+if (response$status_code == 200) {
   # get body from request
-  resp_body_json(simplifyVector = TRUE) |>
-  # limit to three columns
-  select(state, date=end_date, cases=new_cases) |>
-  # format: ISO-8601 dates and numeric cases
-  mutate(date = as.Date(date), cases = as.numeric(cases))
+  cases <- response |>
+    resp_body_json(simplifyVector = TRUE) |>
+    # limit to three columns
+    select(state, date=end_date, cases=new_cases) |>
+    # format: ISO-8601 dates and numeric cases
+    mutate(date = as.Date(date), cases = as.numeric(cases))
+} else {
+  print(paste0("Unsuccessful response: ", response))
+}
+  
 ```
 
 
@@ -214,7 +224,7 @@ cases_raw <- request(api) |>
 
 ```{r, fig.height=10, fig.width=8}
 #| label: time-series-q12
-cases_raw |> 
+cases |> 
   # filter for 2020 and 2021
   filter(year(date) == "2020" | year(date) == "2021") |>
   mutate(year = year(date)) |>
@@ -226,7 +236,7 @@ cases_raw |>
   ggplot(aes(x=date, y=cases100k, group=state, color=state)) +
   geom_line() +
   # scale axes
-  scale_x_date(date_breaks="6 months", date_labels="%b %y") +
+  scale_x_date(date_breaks="6 months", date_labels="%b %Y") +
   scale_y_continuous() +
   # stratify by region name
   facet_wrap(~region_name, ncol=2) +
@@ -243,7 +253,7 @@ cases_raw |>
 ```{r}
 #| label: summary-cases-q13
 library(knitr)
-cases_raw |> 
+cases |> 
   # use lubridate to parse date column
   mutate(month=month(date, label=TRUE), year=year(date)) |>
   # filter for 2020 and 2021
@@ -254,7 +264,7 @@ cases_raw |>
             .groups="drop_last") |>
   # order by month and year
   arrange(year, month) |>
-  kable()
+  kable(col.names=c("Month", "Year", "Total Cases"))
 ```
 
 14. The following URL provides additional COVID-19 data from the CDC in JSON format:
