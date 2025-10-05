@@ -196,7 +196,6 @@ cases_raw |>
   # join with population and regions tables
   inner_join(population, 
             by=join_by(state == state, year == year)) |>
-  inner_join(regions, by=join_by(state_name == state_name)) |>
   # calculate cases per 100,000
   mutate(cases100k=cases / population * 100000) |>
   ggplot(aes(x=date, y=cases100k, group=state, color=state)) +
