@@ -199,10 +199,11 @@ cases_raw |>
   inner_join(regions, by=join_by(state_name == state_name)) |>
   # calculate cases per 100,000
   mutate(cases100k=cases / population * 100000) |>
-  ggplot(aes(x=date, y=cases100k)) +
+  ggplot(aes(x=date, y=cases100k, group=state, color=state)) +
   geom_line() +
-  # scale x-axis
+  # scale axes
   scale_x_date(date_breaks="6 months", date_labels="%b %y") +
+  scale_y_continuous() +
   # stratify by region name
   facet_wrap(~region_name, ncol=2) +
   # label plot
