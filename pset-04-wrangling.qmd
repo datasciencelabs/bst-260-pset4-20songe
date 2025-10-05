@@ -190,10 +190,26 @@ cases_raw <- request(api) |>
 
 ```{r}
 cases_raw |> 
+  # filter for 2020 and 2021
   filter(year(date) == "2020" | year(date) == "2021") |>
   mutate(year = year(date)) |>
-  left_join(select(population, population, state, as.numeric(year)), by=join_by(state == state, year == year))
-  # ggplot(aes(date, cases))
+  # join with population and regions tables
+  inner_join(population, 
+            by=join_by(state == state, year == year)) |>
+  inner_join(regions, by=join_by(state_name == state_name)) |>
+  # calculate cases per 100,000
+  mutate(cases100k=cases / population * 100000) |>
+  ggplot(aes(x=date, y=cases100k)) +
+  geom_line() +
+  # scale x-axis
+  scale_x_date(date_breaks="6 months", date_labels="%b %y") +
+  # stratify by region name
+  facet_wrap(~region_name, ncol=2) +
+  # label plot
+  labs(title="Time Series Plot of SARS-COV2 Cases",
+       caption="Points represent cases per 100,000.") +
+  xlab("Date") +
+  ylab("Cases per 100,000")
 ```
 
 13. The dates in the `cases` dataset are stored as character strings. Use the **lubridate** package to properly parse the `date` column, then create a summary table showing the total COVID-19 cases by month and year for 2020 and 2021. The table should have columns for year, month (as month name), and total cases across all states. Order by year and month. Use the **knitr** package and `kable()` function to display the results as a formatted table.
