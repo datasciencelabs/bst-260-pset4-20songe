@@ -242,16 +242,19 @@ Use **httr2** to download COVID-19 death data from this endpoint. Make sure to r
 
 ```{r}
 deaths <- request(deaths_url) |>
+  req_url_query(`$limit`=10000000000) |>
   req_perform() |>
-  resp_body_json(simplifyVector=TRUE) |>
-  select(state, 
-         date=data_as_of, 
+  resp_body_json(simplifyVector = TRUE) |>
+  select(state,
+         date=end_date,
          deaths=covid_19_deaths) |>
-  mutate(date=as.Date(date), deaths=as.numeric(deaths))
+  mutate(date=as.Date(date), deaths=as.numeric(deaths)) |>
+  filter(state %in% c(state.name, "District of Columbia", "Puerto Rico")) |>
+  drop_na()
 ```
 
 15. Using the `deaths` dataset you created, make a bar plot showing the total COVID-19 deaths by state. Show only the top 10 states with the highest death counts. Order the bars from highest to lowest and use appropriate labels and title.
 
 ```{r}
-# Your code here
+deaths
 ```
