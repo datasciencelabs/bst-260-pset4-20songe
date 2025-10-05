@@ -50,7 +50,8 @@ request <- request(request_url)
 
 ```{r}
 response <- req_perform(request)
-response
+print(paste("Response status is 200?", response$status_code == 200))
+print(response)
 ```
 
 4. Use a function from the **httr2** package to determine the content type of your response.
@@ -99,7 +100,7 @@ population <- population |> ## Use janitor row to names function
 
 7. As a check, make a barplot of states' 2021 and 2022 populations. Show the state names in the y-axis ordered by population size.  Hint: You will need to use `reorder` and use `facet_wrap`.
 
-```{r, fig.height=10}
+```{r, fig.height=10, fig.width=8}
 population |> 
   # reorder state
   # assign aesthetic mapping
@@ -114,7 +115,8 @@ population |>
   ggtitle("Barplot of State Populations") +
   xlab("State") + 
   ylab("Population") + 
-  labs(caption="States are ordered by population size.")
+  labs(caption="States are ordered by population size.") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) 
 ```
 
 
@@ -162,9 +164,14 @@ population <- left_join(population, regions, by="state_name")
 
 ```{r}
 api <- "https://data.cdc.gov/resource/pwn4-m3yp.json"
-cases_raw <- request(api) |> 
-  req_perform() |> 
-  resp_body_json(simplifyVector=TRUE)
+response <- request(api) |>
+  req_perform()
+if (response$status_code == 200) {
+  cases_raw <- response |> resp_body_json(simplifyVector=TRUE)
+} else {
+  stop(paste("Unsuccessful status code in response:", response))
+}
+
 ```
 
 We see exactly 1,000 rows. We should be seeing over $52 \times 3$ rows per state.
@@ -242,16 +249,23 @@ Use **httr2** to download COVID-19 death data from this endpoint. Make sure to r
 
 
 ```{r}
-deaths <- request(deaths_url) |>
+response <- request(deaths_url) |>
   req_url_query(`$limit`=10000000000) |>
-  req_perform() |>
-  resp_body_json(simplifyVector = TRUE) |>
-  select(state,
-         date=end_date,
-         deaths=covid_19_deaths) |>
-  mutate(date=as.Date(date), deaths=as.numeric(deaths)) |>
-  filter(state %in% c(state.name, "District of Columbia", "Puerto Rico")) |>
-  drop_na()
+  req_perform()
+
+if (response$status_code == 200) {
+  deaths <- response |>
+    resp_body_json(simplifyVector = TRUE) |>
+    select(state,
+           date=end_date,
+           deaths=covid_19_deaths) |>
+    mutate(date=as.Date(date), deaths=as.numeric(deaths)) |>
+    filter(state %in% c(state.name, "District of Columbia", "Puerto Rico")) |>
+    drop_na()
+} else {
+  print(paste("Request failed with response: ", response))
+}
+
 ```
 
 15. Using the `deaths` dataset you created, make a bar plot showing the total COVID-19 deaths by state. Show only the top 10 states with the highest death counts. Order the bars from highest to lowest and use appropriate labels and title.
