@@ -216,6 +216,7 @@ cases_raw |>
 13. The dates in the `cases` dataset are stored as character strings. Use the **lubridate** package to properly parse the `date` column, then create a summary table showing the total COVID-19 cases by month and year for 2020 and 2021. The table should have columns for year, month (as month name), and total cases across all states. Order by year and month. Use the **knitr** package and `kable()` function to display the results as a formatted table.
 
 ```{r}
+library(knitr)
 cases_raw |> 
   # use lubridate to parse date column
   mutate(month=month(date, label=TRUE), year=year(date)) |>
@@ -226,7 +227,8 @@ cases_raw |>
   summarize(total_cases=sum(cases),
             .groups="drop_last") |>
   # order by month and year
-  arrange(year, month)
+  arrange(year, month) |>
+  kable()
 ```
 
 14. The following URL provides additional COVID-19 data from the CDC in JSON format:
