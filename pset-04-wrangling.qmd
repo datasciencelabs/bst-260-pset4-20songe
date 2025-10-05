@@ -241,7 +241,13 @@ Use **httr2** to download COVID-19 death data from this endpoint. Make sure to r
 
 
 ```{r}
-# Your code here
+deaths <- request(deaths_url) |>
+  req_perform() |>
+  resp_body_json(simplifyVector=TRUE) |>
+  select(state, 
+         date=data_as_of, 
+         deaths=covid_19_deaths) |>
+  mutate(date=as.Date(date), deaths=as.numeric(deaths))
 ```
 
 15. Using the `deaths` dataset you created, make a bar plot showing the total COVID-19 deaths by state. Show only the top 10 states with the highest death counts. Order the bars from highest to lowest and use appropriate labels and title.
